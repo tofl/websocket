@@ -14,12 +14,12 @@ import (
 	"strings"
 )
 
-func Upgrade(c *net.Conn, req *http.Request, allowedOrigin string, allowedProtocols []string, allowedExtensions []string) (*Connection, error) {
+func upgrade(c *net.Conn, req *http.Request, path string, allowedOrigin string, allowedProtocols []string, allowedExtensions []string) (*Connection, error) {
 	handshakeFail := "the websocket handshake has failed: "
 	newConn := Connection{}
 
 	// Check that the request is valid
-	if req.Method != http.MethodGet || req.URL.String() != "/ws" { // TODO change path
+	if req.Method != http.MethodGet || req.URL.String() != path {
 		return nil, errors.New(handshakeFail + "wrong url")
 	}
 
@@ -27,7 +27,7 @@ func Upgrade(c *net.Conn, req *http.Request, allowedOrigin string, allowedProtoc
 		return nil, errors.New(handshakeFail + "missing or wrong 'upgrade' header")
 	}
 
-	if !strings.EqualFold(req.Header.Get("Connection"), "Upgrade") {
+	if !strings.EqualFold(req.Header.Get("Connection"), "upgrade") {
 		return nil, errors.New(handshakeFail + "missing or wrong 'connection' header")
 	}
 
@@ -53,7 +53,7 @@ func Upgrade(c *net.Conn, req *http.Request, allowedOrigin string, allowedProtoc
 	protocols := strings.Split(req.Header.Get("Sec-WebSocket-Protocol"), ", ")
 	extensions := strings.Split(req.Header.Get("Sec-WebSocket-Extensions"), ", ")
 
-	newConn.IsOpen = true
+	newConn.isOpen = true
 
 	newConn.Id = uuid.NewString()
 
@@ -62,8 +62,8 @@ func Upgrade(c *net.Conn, req *http.Request, allowedOrigin string, allowedProtoc
 	wsKey := base64.StdEncoding.EncodeToString(wsKeyDec[:])
 
 	response := fmt.Sprintf("HTTP/1.1 101 Switching Protocols\r\n"+
-		"Upgrade: websocket\r\n"+
-		"Connection: Upgrade\r\n"+
+		"upgrade: websocket\r\n"+
+		"Connection: upgrade\r\n"+
 		"Sec-WebSocket-Accept: %s\r\n", wsKey)
 
 	for _, v := range protocols {
@@ -94,7 +94,7 @@ func Upgrade(c *net.Conn, req *http.Request, allowedOrigin string, allowedProtoc
 	return &newConn, nil
 }
 
-func handleWebsocket(c *net.Conn, r func(c *Connection, cp *ConnectionPool, frame Frame), cp *ConnectionPool) {
+func handleWebsocket(c *net.Conn, r func(c *Connection, cp *ConnectionPool, frame Frame), cp *ConnectionPool, path string) {
 	// 1. Read http request
 	buf := bufio.NewReader(*c)
 	req, err := http.ReadRequest(buf)
@@ -104,7 +104,7 @@ func handleWebsocket(c *net.Conn, r func(c *Connection, cp *ConnectionPool, fram
 	}
 
 	// 2. Check handshake
-	connection, err := Upgrade(c, req, "*", nil, nil)
+	connection, err := upgrade(c, req, path, "*", nil, nil)
 	if err != nil {
 		r := http.Response{Status: strconv.Itoa(http.StatusBadRequest)}
 		r.Write(*c)
@@ -113,10 +113,9 @@ func handleWebsocket(c *net.Conn, r func(c *Connection, cp *ConnectionPool, fram
 
 	// 3. Manage connection (add it to a pool)
 	cp.Add(connection)
-	fmt.Println("a new user logged in")
 
 	// 4. Read frame
-	for (*connection).IsOpen {
+	for (*connection).isOpen {
 		(*connection).OnRead(r, cp)
 	}
 }
@@ -140,7 +139,7 @@ func NewServer(address, path string, r func(c *Connection, cp *ConnectionPool, f
 			return
 		}
 
-		go handleWebsocket(&conn, r, &connectionPool)
+		go handleWebsocket(&conn, r, &connectionPool, path)
 	}
 
 	defer conn.Close()

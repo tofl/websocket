@@ -10,7 +10,7 @@ type Connection struct {
 	Origin     string
 	Protocol   string
 	Extensions []string
-	IsOpen     bool // TODO make this private
+	isOpen     bool
 	Id         string
 }
 
@@ -95,7 +95,7 @@ func (c *Connection) OnRead(r func(connection *Connection, cp *ConnectionPool, f
 func (c *Connection) Close() {
 	(*c.Conn).Write([]byte{0b10001000, 0b00000000})
 	(*c.Conn).Close()
-	c.IsOpen = false
+	c.isOpen = false
 	return
 }
 
