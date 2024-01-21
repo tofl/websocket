@@ -13,6 +13,9 @@ type Frame struct {
 	Payload       []byte
 }
 
+// NewFrame creates a new frame.
+// Set isFin to true if the frame is final and opcode to the applicable Opcode as defined in RFC 6455.
+// The masking key is automatically created if isMasked is true.
 func NewFrame(isFin bool, opcode byte, isMasked bool, payload []byte) Frame {
 	f := Frame{}
 	f.IsFin = isFin

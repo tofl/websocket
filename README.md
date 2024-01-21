@@ -6,6 +6,9 @@ This project serves as a simple websocket server library following the websocket
 go get github.com/tofl/websocket
 ```
 
+## API reference
+The API reference can be viewed at [pkg.go.dev/github.com/tofl/websocket](https://pkg.go.dev/github.com/tofl/websocket).
+
 ## Usage
 To start a new websocket server, just use the `NewServer` function. It takes as parameters the address, the path and the `onRead` function.
 

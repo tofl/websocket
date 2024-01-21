@@ -14,7 +14,7 @@ type Connection struct {
 	Id         string
 }
 
-func (c *Connection) OnRead(r func(connection *Connection, cp *ConnectionPool, frame Frame), cp *ConnectionPool) {
+func (c *Connection) onRead(r func(connection *Connection, cp *ConnectionPool, frame Frame), cp *ConnectionPool) {
 	// Payload
 	buf := make([]byte, 1024)
 	_, err := (*c.Conn).Read(buf)
@@ -92,6 +92,7 @@ func (c *Connection) OnRead(r func(connection *Connection, cp *ConnectionPool, f
 	r(c, cp, frame)
 }
 
+// Close closes the connection
 func (c *Connection) Close() {
 	(*c.Conn).Write([]byte{0b10001000, 0b00000000})
 	(*c.Conn).Close()
@@ -99,7 +100,7 @@ func (c *Connection) Close() {
 	return
 }
 
-// Constructs a response frame from a Frame struct
+// Write constructs a response frame
 func (c *Connection) Write(f Frame) {
 	bytes := []byte{0b0, 0b0}
 

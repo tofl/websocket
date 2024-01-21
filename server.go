@@ -112,14 +112,15 @@ func handleWebsocket(c *net.Conn, r func(c *Connection, cp *ConnectionPool, fram
 	}
 
 	// 3. Manage connection (add it to a pool)
-	cp.Add(connection)
+	cp.add(connection)
 
 	// 4. Read frame
 	for (*connection).isOpen {
-		(*connection).OnRead(r, cp)
+		(*connection).onRead(r, cp)
 	}
 }
 
+// NewServer listens to websocket connections.
 func NewServer(address, path string, r func(c *Connection, cp *ConnectionPool, frame Frame)) {
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
