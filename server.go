@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
@@ -121,18 +122,24 @@ func handleWebsocket(c *net.Conn, r func(c *Connection, cp *ConnectionPool, fram
 }
 
 // NewServer listens to websocket connections.
-func NewServer(address, path string, r func(c *Connection, cp *ConnectionPool, frame Frame)) {
+func NewServer(ctx context.Context, address, path string, r func(c *Connection, cp *ConnectionPool, frame Frame)) {
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		fmt.Println("error listening to connections")
 		return
 	}
 
-	defer listener.Close()
-
 	connectionPool := ConnectionPool{Connections: make(map[string]*Connection)}
 
-	var conn net.Conn
+	go func() {
+		<-ctx.Done()
+		fmt.Println("shutting down server...")
+
+		connectionPool.CloseAllConnections()
+		listener.Close()
+		return
+	}()
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -142,6 +149,4 @@ func NewServer(address, path string, r func(c *Connection, cp *ConnectionPool, f
 
 		go handleWebsocket(&conn, r, &connectionPool, path)
 	}
-
-	defer conn.Close()
 }

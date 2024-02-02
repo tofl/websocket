@@ -31,3 +31,12 @@ func (p *ConnectionPool) Remove(c *Connection) {
 	delete(p.Connections, c.Id)
 	p.mutex.Unlock()
 }
+
+// CloseAllConnections closes all the connections
+func (p *ConnectionPool) CloseAllConnections() {
+	p.mutex.Lock()
+	for _, c := range p.Connections {
+		c.Close()
+	}
+	p.mutex.Unlock()
+}

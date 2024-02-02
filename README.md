@@ -1,5 +1,5 @@
 # Websocket
-This project serves as a simple websocket server library following the websocket protocol as defined in [RFC 6455](https://datatracker.ietf.org/doc/html/rfc6455).
+This project serves as a simple websocket server library following the websocket protocol as defined in [RFC 6455](https://datatracker.ietf.org/doc/html/rfc6455). It's an exploratory project and shouldn't be used in a production environment.
 
 ## Installation
 ```
